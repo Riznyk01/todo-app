@@ -23,6 +23,10 @@ func setupLogger(typeOfLog, level string) *slog.Logger {
 		opts = slog.HandlerOptions{Level: slog.LevelDebug}
 	case "INFO":
 		opts = slog.HandlerOptions{Level: slog.LevelInfo}
+	case "WARN":
+		opts = slog.HandlerOptions{Level: slog.LevelWarn}
+	case "ERROR":
+		opts = slog.HandlerOptions{Level: slog.LevelError}
 	default:
 		opts = slog.HandlerOptions{Level: slog.LevelDebug}
 	}
