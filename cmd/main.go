@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"todo-app/internal/config"
+	todoapp "todo-app"
 )
 
 func main() {
-	cfg := config.MustLoad()
 	log := setupLogger(os.Getenv("TYPE_OF_LOG"), os.Getenv("LOG_LEVEL"))
-	log.Info("starting app")
-	log.Debug("debug messages are enabled")
-	fmt.Println(cfg)
+	srv := new(todoapp.Server)
+	log.Info(fmt.Sprintf("server starting on %s:%s", os.Getenv("ADDR"), os.Getenv("PORT")))
+	if err := srv.Run(os.Getenv("ADDR"), os.Getenv("PORT")); err != nil {
+		log.Error("error while starting the HTTP server", err)
+	}
+
 }
 func setupLogger(typeOfLog, level string) *slog.Logger {
 	var log *slog.Logger
