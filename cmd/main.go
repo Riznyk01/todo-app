@@ -6,12 +6,17 @@ import (
 	"os"
 	todoapp "todo-app"
 	"todo-app/pkg/handler"
+	"todo-app/repository"
+	"todo-app/service"
 )
 
 func main() {
-	log := setupLogger(os.Getenv("TYPE_OF_LOG"), os.Getenv("LOG_LEVEL"))
-	handlers := new(handler.Handler)
+	repos := repository.NewRepository()
+	services := service.NewService(repos)
+	handlers := handler.NewHandler(services)
+
 	srv := new(todoapp.Server)
+	log := setupLogger(os.Getenv("TYPE_OF_LOG"), os.Getenv("LOG_LEVEL"))
 	log.Info(fmt.Sprintf("server starting on %s:%s", os.Getenv("ADDR"), os.Getenv("PORT")))
 	if err := srv.Run(os.Getenv("ADDR"), os.Getenv("PORT"), handlers.InitRouts()); err != nil {
 		log.Error("error while starting the HTTP server", err)
