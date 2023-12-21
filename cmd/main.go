@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	_ "github.com/lib/pq"
 	"log/slog"
 	"os"
 	todoapp "todo-app"
@@ -11,14 +12,27 @@ import (
 )
 
 func main() {
-	repos := repository.NewRepository()
+	log := setupLogger(os.Getenv("TYPE_OF_LOG"), os.Getenv("LOG_LEVEL"))
+
+	db, err := repository.NewPostgresDB(repository.Config{
+		Host:     os.Getenv("DB_Host"),
+		Port:     os.Getenv("DB_Port"),
+		Username: os.Getenv("DB_Username"),
+		Password: os.Getenv("DB_Password"),
+		DBName:   os.Getenv("DB_Name"),
+		SSLMode:  os.Getenv("DB_SSLMode"),
+	})
+	if err != nil {
+		log.Error(fmt.Sprintf("failed to initialize db: %s", err.Error()))
+	}
+
+	repos := repository.NewRepository(db)
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
 
 	srv := new(todoapp.Server)
-	log := setupLogger(os.Getenv("TYPE_OF_LOG"), os.Getenv("LOG_LEVEL"))
-	log.Info(fmt.Sprintf("server starting on %s:%s", os.Getenv("ADDR"), os.Getenv("PORT")))
-	if err := srv.Run(os.Getenv("ADDR"), os.Getenv("PORT"), handlers.InitRouts()); err != nil {
+	log.Info(fmt.Sprintf("server starting on %s:%s", os.Getenv("APP_ADDR"), os.Getenv("APP_PORT")))
+	if err := srv.Run(os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"), handlers.InitRouts()); err != nil {
 		log.Error("error while starting the HTTP server", err)
 	}
 
