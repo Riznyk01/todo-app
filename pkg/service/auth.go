@@ -17,17 +17,21 @@ func NewAuthService(repo repository.Authorization) *AuthService {
 }
 
 func (s *AuthService) CreateUser(user todoapp.User) (int, error) {
-	user.Password = s.generatePasswordHash(user.Password)
+	passHash, err := s.generatePasswordHash(user.Password)
+	if err != nil {
+		return 0, err
+	}
+	user.Password = passHash
 	return s.repo.CreateUser(user)
 }
 
-// TODO returning an error
-func (s *AuthService) generatePasswordHash(pass string) string {
+func (s *AuthService) generatePasswordHash(pass string) (string, error) {
 	fc := "Auth generatePasswordHash"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		log.Errorf("%s%s", fc, err)
+		log.Errorf("%s failed to generate password hash\n %s", fc, err)
+		return "", err
 	}
-	return fmt.Sprintf("%s", passHash)
+	return fmt.Sprintf("%s", passHash), nil
 }
