@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"net/mail"
 	todoapp "todo-app"
 	"todo-app/pkg/service"
 )
@@ -13,6 +14,10 @@ func (h *Handler) signUp(c *gin.Context) {
 	err := c.BindJSON(&input)
 	if err != nil {
 		newResponceError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if _, err := mail.ParseAddress(input.Email); err != nil {
+		newResponceError(c, http.StatusUnprocessableEntity, "Invalid email address.")
 		return
 	}
 	id, err := h.services.Authorization.CreateUser(input)

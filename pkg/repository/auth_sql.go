@@ -18,8 +18,8 @@ func NewAuthSql(db *sqlx.DB) *AuthSql {
 func (r *AuthSql) CreateUser(user todoapp.User) (int, error) {
 	fc := "Repository. CreateUser"
 	var id int
-	q := fmt.Sprintf("INSERT INTO %s (name, username, password_hash) values ($1, $2, $3) RETURNING id", usersTable)
-	row := r.db.QueryRow(q, user.Name, user.Username, user.Password)
+	q := fmt.Sprintf("INSERT INTO %s (email, username, password_hash) values ($1, $2, $3) RETURNING id", usersTable)
+	row := r.db.QueryRow(q, user.Email, user.Username, user.Password)
 	if err := row.Scan(&id); err != nil {
 		log.Errorf("%s: %v", fc, err)
 		return 0, err
