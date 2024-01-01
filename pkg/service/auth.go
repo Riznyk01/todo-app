@@ -13,6 +13,10 @@ import (
 	"todo-app/pkg/repository"
 )
 
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+)
+
 type AuthService struct {
 	repo repository.Authorization
 }
@@ -29,13 +33,22 @@ func (s *AuthService) CreateUser(user todoapp.User) (int, error) {
 	user.Password = passHash
 	return s.repo.CreateUser(user)
 }
+func (s *AuthService) ExistsUser(username string) (bool, error) {
+	ex, err := s.repo.UserExists(username)
+	if err != nil {
+		return false, err
+	}
+	return ex, nil
+}
 func (s *AuthService) GenerateToken(username, password string) (string, error) {
-	var (
-		ErrInvalidCredentials = errors.New("invalid credentials")
-	)
-
 	fc := "GenerateToken"
 	var tokenTtl time.Duration
+
+	user, err := s.repo.GetUser(username)
+	if err != nil {
+		return "", err
+	}
+
 	tokenHours, err := strconv.Atoi(os.Getenv("TOKEN_TTL"))
 	if err != nil {
 		log.Errorf("%s failed to set token expiration duration\n %s. Using default value - 12 Hours.", fc, err)
@@ -43,13 +56,9 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 	}
 	tokenTtl = time.Duration(tokenHours) * time.Hour
 
-	user, err := s.repo.GetUser(username)
-	if err != nil {
-		return "", err
-	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		log.Errorf("%s invalid credentials: %v", fc, err)
-		return "", fmt.Errorf("%s: %w", fc, ErrInvalidCredentials)
+		return "", ErrInvalidCredentials
 	}
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
@@ -59,9 +68,9 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
+		log.Errorf("%s error creating signed token: %v", fc, err)
 		return "", err
 	}
-
 	return tokenString, nil
 }
 func generatePasswordHash(pass string) (string, error) {
@@ -70,7 +79,7 @@ func generatePasswordHash(pass string) (string, error) {
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
 		log.Errorf("%s failed to generate password hash: %v", fc, err)
-		return "", fmt.Errorf("failed to generate password hash %w", err) //err
+		return "", fmt.Errorf("failed to generate password hash %w", err)
 	}
 	return fmt.Sprintf("%s", passHash), nil
 }
