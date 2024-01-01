@@ -62,9 +62,10 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 	}
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
+	claims["userid"] = user.Id
+	claims["email"] = user.Email
 	claims["exp"] = time.Now().Add(tokenTtl).Unix()
 	claims["ess"] = time.Now().Unix()
-	claims["userid"] = user.Id
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
