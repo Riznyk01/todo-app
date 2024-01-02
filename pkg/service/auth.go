@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"os"
 	"strconv"
@@ -18,16 +18,22 @@ var (
 )
 
 type AuthService struct {
+	log  *logrus.Logger
 	repo repository.Authorization
 }
 
-func NewAuthService(repo repository.Authorization) *AuthService {
-	return &AuthService{repo: repo}
+func NewAuthService(log *logrus.Logger, repo repository.Authorization) *AuthService {
+	return &AuthService{
+		log:  log,
+		repo: repo,
+	}
 }
 
 func (s *AuthService) CreateUser(user todoapp.User) (int, error) {
 	passHash, err := generatePasswordHash(user.Password)
 	if err != nil {
+		s.log.Errorf("%s failed to generate password hash: %v",
+			"service. auth. generatePasswordHash", err)
 		return 0, err
 	}
 	user.Password = passHash
@@ -51,13 +57,13 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 
 	tokenHours, err := strconv.Atoi(os.Getenv("TOKEN_TTL"))
 	if err != nil {
-		log.Errorf("%s failed to set token expiration duration\n %s. Using default value - 12 Hours.", fc, err)
+		s.log.Errorf("%s failed to set token expiration duration\n %s. Using default value - 12 Hours.", fc, err)
 		tokenHours = 12
 	}
 	tokenTtl = time.Duration(tokenHours) * time.Hour
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Errorf("%s invalid credentials: %v", fc, err)
+		s.log.Errorf("%s invalid credentials: %v", fc, err)
 		return "", ErrInvalidCredentials
 	}
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -69,17 +75,16 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
-		log.Errorf("%s error creating signed token: %v", fc, err)
+		s.log.Errorf("%s error creating signed token: %v", fc, err)
 		return "", err
 	}
 	return tokenString, nil
 }
 func generatePasswordHash(pass string) (string, error) {
-	fc := "Auth generatePasswordHash"
-
+	//fc := "Auth generatePasswordHash"
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		log.Errorf("%s failed to generate password hash: %v", fc, err)
+		//log.Errorf("%s failed to generate password hash: %v", fc, err)
 		return "", fmt.Errorf("failed to generate password hash %w", err)
 	}
 	return fmt.Sprintf("%s", passHash), nil

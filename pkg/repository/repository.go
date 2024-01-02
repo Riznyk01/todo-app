@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 	todoapp "todo-app"
 )
 
@@ -23,8 +24,10 @@ type Repository struct {
 	TodoItem
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(log *logrus.Logger, db *sqlx.DB) *Repository {
 	return &Repository{
-		Authorization: NewAuthSql(db),
+		Authorization: NewAuthSql(
+			log,
+			db),
 	}
 }

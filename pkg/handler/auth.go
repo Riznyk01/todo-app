@@ -13,16 +13,16 @@ func (h *Handler) signUp(c *gin.Context) {
 	var input todoapp.User
 	err := c.BindJSON(&input)
 	if err != nil {
-		newResponceError(c, http.StatusBadRequest, err.Error())
+		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
 		return
 	}
 	if _, err := mail.ParseAddress(input.Email); err != nil {
-		newResponceError(c, http.StatusUnprocessableEntity, "Invalid email address.")
+		newResponceError(c, h.log, http.StatusUnprocessableEntity, "Invalid email address.")
 		return
 	}
 	id, err := h.services.Authorization.CreateUser(input)
 	if err != nil {
-		newResponceError(c, http.StatusInternalServerError, err.Error())
+		newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -40,25 +40,25 @@ func (h *Handler) signIn(c *gin.Context) {
 	var input signInInput
 	err := c.BindJSON(&input)
 	if err != nil {
-		newResponceError(c, http.StatusBadRequest, err.Error())
+		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
 		return
 	}
 	exist, err := h.services.Authorization.ExistsUser(input.Username)
 	if err != nil {
-		newResponceError(c, http.StatusUnauthorized, err.Error())
+		newResponceError(c, h.log, http.StatusUnauthorized, err.Error())
 		return
 	}
 	if !exist {
-		newResponceError(c, http.StatusUnauthorized, "Invalid credentials. The specified username doesn't exist.")
+		newResponceError(c, h.log, http.StatusUnauthorized, "Invalid credentials. The specified username doesn't exist.")
 		return
 	}
 	token, err := h.services.Authorization.GenerateToken(input.Username, input.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
-			newResponceError(c, http.StatusUnauthorized, "Invalid user password.")
+			newResponceError(c, h.log, http.StatusUnauthorized, "Invalid user password.")
 			return
 		} else {
-			newResponceError(c, http.StatusInternalServerError, "Error creating signed token.")
+			newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed token.")
 			return
 		}
 	}

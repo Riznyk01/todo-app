@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/sirupsen/logrus"
 	todoapp "todo-app"
 	"todo-app/pkg/repository"
 )
@@ -23,8 +24,10 @@ type Service struct {
 	TodoItem
 }
 
-func NewService(repos *repository.Repository) *Service {
+func NewService(log *logrus.Logger, repos *repository.Repository) *Service {
 	return &Service{
-		Authorization: NewAuthService(repos.Authorization),
+		Authorization: NewAuthService(
+			log,
+			repos.Authorization),
 	}
 }
