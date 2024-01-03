@@ -69,9 +69,8 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["userid"] = user.Id
-	claims["email"] = user.Email
+	//claims["email"] = user.Email
 	claims["exp"] = time.Now().Add(tokenTtl).Unix()
-	claims["ess"] = time.Now().Unix()
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
@@ -79,6 +78,26 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+func (s *AuthService) ParseToken(tokenString string) (int, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(os.Getenv("SIGNING_KEY")), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, errors.New("invalid token structure")
+	}
+	useridInt, ok := claims["userid"].(float64)
+	if !ok {
+		return 0, errors.New("invalid token structure: userid is not a number")
+	}
+	return int(useridInt), nil
 }
 func generatePasswordHash(pass string) (string, error) {
 	//fc := "Auth generatePasswordHash"
