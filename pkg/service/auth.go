@@ -46,38 +46,57 @@ func (s *AuthService) ExistsUser(username string) (bool, error) {
 	}
 	return ex, nil
 }
-func (s *AuthService) GenerateToken(email, password string) (string, error) {
-	fc := "GenerateToken"
-	var tokenTtl time.Duration
+func (s *AuthService) GenerateTokenPair(email, password string) (string, string, error) {
+	fc := "GenerateTokenPair"
 
 	user, err := s.repo.GetUser(email)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	tokenHours, err := strconv.Atoi(os.Getenv("TOKEN_TTL"))
+	accessMinutesStr, err := strconv.Atoi(os.Getenv("ACCESS_TTL"))
 	if err != nil {
-		s.log.Errorf("%s failed to set token expiration duration\n %s. Using default value - 12 Hours.", fc, err)
-		tokenHours = 12
+		s.log.Errorf("%s failed to set access token expiration duration\n %s. Using default value - 15 mins.", fc, err)
+		accessMinutesStr = 15
 	}
-	tokenTtl = time.Duration(tokenHours) * time.Hour
+	accessTokenTtl := time.Duration(accessMinutesStr) * time.Minute
+
+	refreshHoursStr, err := strconv.Atoi(os.Getenv("REFRESH_TTL"))
+	if err != nil {
+		s.log.Errorf("%s failed to set refresh token expiration duration\n %s. Using default value - 8640 hours.", fc, err)
+		accessMinutesStr = 8640
+	}
+	refreshTokenTtl := time.Duration(refreshHoursStr) * time.Hour
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		s.log.Errorf("%s invalid credentials: %v", fc, err)
-		return "", ErrInvalidCredentials
+		return "", "", ErrInvalidCredentials
 	}
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["userid"] = user.Id
-	//claims["email"] = user.Email
-	claims["exp"] = time.Now().Add(tokenTtl).Unix()
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNING_KEY")))
+	accessToken := jwt.New(jwt.SigningMethodHS256)
+	accessClaims := accessToken.Claims.(jwt.MapClaims)
+	accessClaims["sub"] = user.Id
+	accessClaims["iat"] = time.Now().Unix()
+	accessClaims["exp"] = time.Now().Add(accessTokenTtl).Unix()
+
+	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
-		s.log.Errorf("%s error creating signed token: %v", fc, err)
-		return "", err
+		s.log.Errorf("%s error creating signed access token: %v", fc, err)
+		return "", "", err
 	}
-	return tokenString, nil
+
+	refreshToken := jwt.New(jwt.SigningMethodHS256)
+	refreshClaims := refreshToken.Claims.(jwt.MapClaims)
+	refreshClaims["sub"] = user.Id
+	refreshClaims["iat"] = time.Now().Unix()
+	refreshClaims["exp"] = time.Now().Add(refreshTokenTtl).Unix()
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SIGNING_KEY")))
+	if err != nil {
+		s.log.Errorf("%s error creating signed refresh token: %v", fc, err)
+		return "", "", err
+	}
+	return accessTokenString, refreshTokenString, nil
 }
 func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -100,7 +119,6 @@ func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	return int(useridInt), nil
 }
 func generatePasswordHash(pass string) (string, error) {
-	//fc := "Auth generatePasswordHash"
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
 		//log.Errorf("%s failed to generate password hash: %v", fc, err)

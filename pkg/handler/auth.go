@@ -56,18 +56,19 @@ func (h *Handler) signIn(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusUnauthorized, "Invalid credentials. The specified username doesn't exist.")
 		return
 	}
-	token, err := h.services.Authorization.GenerateToken(input.Email, input.Password)
+	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(input.Email, input.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			newResponceError(c, h.log, http.StatusUnauthorized, "Invalid user password.")
 			return
 		} else {
-			newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed token.")
+			newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed tokens.")
 			return
 		}
 	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{
-		"token": token,
+		"accesstoken":  accessToken,
+		"refreshtoken": refreshToken,
 	})
 }
