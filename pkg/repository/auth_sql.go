@@ -30,21 +30,21 @@ func (r *AuthSql) CreateUser(user todoapp.User) (int, error) {
 	}
 	return id, nil
 }
-func (r *AuthSql) UserExists(username string) (bool, error) {
+func (r *AuthSql) UserExists(email string) (bool, error) {
 	fc := "Repository. UserExists"
 	var count int
-	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE username=$1", usersTable)
-	if err := r.db.Get(&count, q, username); err != nil {
+	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE email=$1", usersTable)
+	if err := r.db.Get(&count, q, email); err != nil {
 		r.log.Errorf("%s: %v", fc, err)
 		return false, err
 	}
 	return count > 0, nil
 }
-func (r *AuthSql) GetUser(username string) (todoapp.User, error) {
+func (r *AuthSql) GetUser(email string) (todoapp.User, error) {
 	fc := "Repository. GetUser"
 	var user todoapp.User
-	q := fmt.Sprintf("SELECT id, password_hash FROM %s WHERE username=$1", usersTable)
-	if err := r.db.Get(&user, q, username); err != nil {
+	q := fmt.Sprintf("SELECT id, password_hash FROM %s WHERE email=$1", usersTable)
+	if err := r.db.Get(&user, q, email); err != nil {
 		r.log.Errorf("%s: %v", fc, err)
 	}
 	return user, nil

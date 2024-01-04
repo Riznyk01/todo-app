@@ -46,11 +46,11 @@ func (s *AuthService) ExistsUser(username string) (bool, error) {
 	}
 	return ex, nil
 }
-func (s *AuthService) GenerateToken(username, password string) (string, error) {
+func (s *AuthService) GenerateToken(email, password string) (string, error) {
 	fc := "GenerateToken"
 	var tokenTtl time.Duration
 
-	user, err := s.repo.GetUser(username)
+	user, err := s.repo.GetUser(email)
 	if err != nil {
 		return "", err
 	}

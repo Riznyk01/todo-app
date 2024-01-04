@@ -32,10 +32,14 @@ func (h *Handler) signUp(c *gin.Context) {
 }
 
 type signInInput struct {
-	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
+//"required,email,max=64"`
+//"required,min=8,max=64"`
+
+// TODO: Implement authentication for both username and email
 func (h *Handler) signIn(c *gin.Context) {
 	var input signInInput
 	err := c.BindJSON(&input)
@@ -43,7 +47,7 @@ func (h *Handler) signIn(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
 		return
 	}
-	exist, err := h.services.Authorization.ExistsUser(input.Username)
+	exist, err := h.services.Authorization.ExistsUser(input.Email)
 	if err != nil {
 		newResponceError(c, h.log, http.StatusUnauthorized, err.Error())
 		return
@@ -52,7 +56,7 @@ func (h *Handler) signIn(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusUnauthorized, "Invalid credentials. The specified username doesn't exist.")
 		return
 	}
-	token, err := h.services.Authorization.GenerateToken(input.Username, input.Password)
+	token, err := h.services.Authorization.GenerateToken(input.Email, input.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			newResponceError(c, h.log, http.StatusUnauthorized, "Invalid user password.")
