@@ -49,3 +49,18 @@ func (r *AuthSql) GetUser(email string) (todoapp.User, error) {
 	}
 	return user, nil
 }
+func (r *AuthSql) UpdateRefreshTokenInDB(email, newRefreshToken string) error {
+	fc := "Repository. UpdateRefreshTokenInDB"
+
+	q := fmt.Sprintf("UPDATE %s SET refresh_token=:refresh_token WHERE email=:email", usersTable)
+	_, err := r.db.NamedExec(q, map[string]interface{}{
+		"email":         email,
+		"refresh_token": newRefreshToken,
+	})
+
+	if err != nil {
+		r.log.Errorf("%s: %v", fc, err)
+		return err
+	}
+	return nil
+}

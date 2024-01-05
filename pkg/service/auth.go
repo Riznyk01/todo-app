@@ -96,6 +96,13 @@ func (s *AuthService) GenerateTokenPair(email, password string) (string, string,
 		s.log.Errorf("%s error creating signed refresh token: %v", fc, err)
 		return "", "", err
 	}
+
+	err = s.repo.UpdateRefreshTokenInDB(email, refreshTokenString)
+	if err != nil {
+		s.log.Errorf("%s error wrighting refresh token to DB: %v", fc, err)
+		return "", "", err
+	}
+
 	return accessTokenString, refreshTokenString, nil
 }
 func (s *AuthService) ParseToken(tokenString string) (int, error) {
