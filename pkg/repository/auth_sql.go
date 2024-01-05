@@ -30,8 +30,8 @@ func (r *AuthSql) CreateUser(user todoapp.User) (int, error) {
 	}
 	return id, nil
 }
-func (r *AuthSql) UserExists(email string) (bool, error) {
-	fc := "Repository. UserExists"
+func (r *AuthSql) ExistsUser(email string) (bool, error) {
+	fc := "Repository. ExistsUser"
 	var count int
 	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE email=$1", usersTable)
 	if err := r.db.Get(&count, q, email); err != nil {
@@ -63,4 +63,14 @@ func (r *AuthSql) UpdateRefreshTokenInDB(email, newRefreshToken string) error {
 		return err
 	}
 	return nil
+}
+func (r *AuthSql) CheckRefreshTokenInDB(refreshTokenString string) (string, error) {
+	fc := "Repository. CheckRefreshTokenInDB"
+	var mail string
+	q := fmt.Sprintf("SELECT email FROM %s WHERE refresh_token=$1", usersTable)
+	if err := r.db.Get(&mail, q, refreshTokenString); err != nil {
+		r.log.Errorf("%s: %v", fc, err)
+		return "", err
+	}
+	return mail, nil
 }

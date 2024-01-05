@@ -9,8 +9,9 @@ import (
 type Authorization interface {
 	CreateUser(user todoapp.User) (int, error)
 	GetUser(email string) (todoapp.User, error)
-	UserExists(email string) (bool, error)
+	ExistsUser(email string) (bool, error)
 	UpdateRefreshTokenInDB(email, newRefreshToken string) error
+	CheckRefreshTokenInDB(refreshTokenString string) (string, error)
 }
 
 type TodoList interface {
