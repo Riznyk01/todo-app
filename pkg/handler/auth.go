@@ -86,6 +86,11 @@ func (h *Handler) refreshTokens(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusUnauthorized, "The provided refresh token doesn't exist. Please sign in again to obtain a new token pair.")
 		return
 	}
+	_, err = h.services.Authorization.ParseToken(headerParts[1])
+	if err != nil {
+		newResponceError(c, h.log, http.StatusUnauthorized, err.Error())
+		return
+	}
 	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(userMail)
 	if err != nil {
 		newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed tokens.")

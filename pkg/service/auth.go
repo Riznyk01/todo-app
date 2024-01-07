@@ -94,7 +94,7 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	refreshClaims := refreshToken.Claims.(jwt.MapClaims)
 	refreshClaims["sub"] = user.Id
-	refreshClaims["mail"] = user.Email
+	refreshClaims["mail"] = email
 	refreshClaims["iat"] = time.Now().Unix()
 	refreshClaims["exp"] = time.Now().Add(refreshTokenTtl).Unix()
 
@@ -126,7 +126,7 @@ func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	if !ok {
 		return 0, errors.New("invalid token structure")
 	}
-	useridInt, ok := claims["userid"].(float64)
+	useridInt, ok := claims["sub"].(float64)
 	if !ok {
 		return 0, errors.New("invalid token structure: userid is not a number")
 	}
