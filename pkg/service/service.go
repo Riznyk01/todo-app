@@ -8,11 +8,11 @@ import (
 
 type Authorization interface {
 	CreateUser(user todoapp.User) (int, error)
-	GenerateTokenPair(email, password string) (string, string, error)
+	GenerateTokenPair(email string) (string, string, error)
 	ExistsUser(email string) (bool, error)
 	ParseToken(token string) (int, error)
-	UpdateTokenPair(email string) (string, string, error)
 	CheckTokenInDB(refreshTokenString string) (string, error)
+	CheckUserPassword(email, password string) error
 }
 
 type TodoList interface {

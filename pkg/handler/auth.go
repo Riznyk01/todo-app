@@ -1,13 +1,11 @@
 package handler
 
 import (
-	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/mail"
 	"strings"
 	todoapp "todo-app"
-	"todo-app/pkg/service"
 )
 
 func (h *Handler) signUp(c *gin.Context) {
@@ -57,15 +55,14 @@ func (h *Handler) signIn(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusUnauthorized, "Invalid credentials. The specified email doesn't exist.")
 		return
 	}
-	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(input.Email, input.Password)
+	if err := h.services.Authorization.CheckUserPassword(input.Email, input.Password); err != nil {
+		newResponceError(c, h.log, http.StatusUnauthorized, "Invalid credentials.")
+		return
+	}
+	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(input.Email)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidCredentials) {
-			newResponceError(c, h.log, http.StatusUnauthorized, "Invalid user password.")
-			return
-		} else {
-			newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed tokens.")
-			return
-		}
+		newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed tokens.")
+		return
 	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{
@@ -73,7 +70,6 @@ func (h *Handler) signIn(c *gin.Context) {
 		"refreshtoken": refreshToken,
 	})
 }
-
 func (h *Handler) refreshTokens(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
@@ -87,12 +83,12 @@ func (h *Handler) refreshTokens(c *gin.Context) {
 	}
 	userMail, err := h.services.Authorization.CheckTokenInDB(headerParts[1])
 	if err != nil {
-		newResponceError(c, h.log, http.StatusUnauthorized, "the provided refresh token doesn't exist. Please sign in again to obtain a new token pair.")
+		newResponceError(c, h.log, http.StatusUnauthorized, "The provided refresh token doesn't exist. Please sign in again to obtain a new token pair.")
 		return
 	}
-	accessToken, refreshToken, err := h.services.Authorization.UpdateTokenPair(userMail)
+	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(userMail)
 	if err != nil {
-		newResponceError(c, h.log, http.StatusInternalServerError, "error creating signed tokens.")
+		newResponceError(c, h.log, http.StatusInternalServerError, "Error creating signed tokens.")
 		return
 	}
 	c.JSON(http.StatusOK, map[string]interface{}{
