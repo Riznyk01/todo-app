@@ -58,6 +58,7 @@ func (s *AuthService) CheckUserPassword(email, password string) error {
 
 	return nil
 }
+
 func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	fc := "GenerateTokenPair"
 
@@ -66,39 +67,46 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 		return "", "", err
 	}
 
-	accessToken := jwt.New(jwt.SigningMethodHS256)
-	accessClaims := accessToken.Claims.(jwt.MapClaims)
-	accessClaims["sub"] = user.Id
-	accessClaims["iat"] = time.Now().Unix()
-	accessClaims["exp"] = time.Now().Add(s.config.AccessTokenTtl).Unix()
+	genToken := func(customClaims jwt.MapClaims) (string, error) {
+		t := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+		tString, err := t.SignedString([]byte(os.Getenv("SIGNING_KEY")))
+		if err != nil {
+			return "", err
+		}
+		return tString, nil
+	}
 
-	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("SIGNING_KEY")))
+	accClaims := map[string]interface{}{
+		"sub": user.Id,
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(s.config.AccessTokenTtl).Unix(),
+	}
+	accToken, err := genToken(accClaims)
 	if err != nil {
-		s.log.Errorf("%s error creating signed access token: %v", fc, err)
+		s.log.Errorf("%s error creating signed token: %v", fc, err)
 		return "", "", err
 	}
 
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
-	refreshClaims := refreshToken.Claims.(jwt.MapClaims)
-	refreshClaims["sub"] = user.Id
-	refreshClaims["mail"] = email
-	refreshClaims["iat"] = time.Now().Unix()
-	refreshClaims["exp"] = time.Now().Add(s.config.RefreshTokenTtl).Unix()
-
-	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SIGNING_KEY")))
+	refClaims := map[string]interface{}{
+		"sub":  user.Id,
+		"mail": email,
+		"iat":  time.Now().Unix(),
+		"exp":  time.Now().Add(s.config.RefreshTokenTtl).Unix(),
+	}
+	refToken, err := genToken(refClaims)
 	if err != nil {
-		s.log.Errorf("%s error creating signed refresh token: %v", fc, err)
+		s.log.Errorf("%s error creating signed token: %v", fc, err)
 		return "", "", err
 	}
 
-	err = s.repo.UpdateRefreshTokenInDB(email, refreshTokenString)
+	err = s.repo.UpdateRefreshTokenInDB(email, refToken)
 	if err != nil {
 		s.log.Errorf("%s error wrighting refresh token to DB: %v", fc, err)
 		return "", "", err
 	}
-
-	return accessTokenString, refreshTokenString, nil
+	return accToken, refToken, nil
 }
+
 func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
