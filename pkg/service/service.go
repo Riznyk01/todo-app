@@ -27,10 +27,11 @@ type Service struct {
 	TodoItem
 }
 
-func NewService(log *logrus.Logger, repos *repository.Repository) *Service {
+func NewService(log *logrus.Logger, config *todoapp.TokenConfig, repos *repository.Repository) *Service {
 	return &Service{
 		Authorization: NewAuthService(
 			log,
+			config,
 			repos.Authorization),
 	}
 }

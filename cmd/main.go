@@ -4,6 +4,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"os"
+	"time"
 	todoapp "todo-app"
 	"todo-app/pkg/handler"
 	"todo-app/pkg/repository"
@@ -12,6 +13,10 @@ import (
 
 func main() {
 	log := setupLogger()
+
+	servCfg := todoapp.NewConfig()
+	servCfg.AccessTokenTtl = setTokenTTL(log, os.Getenv("ACCESS_TTL"), "30m")
+	servCfg.RefreshTokenTtl = setTokenTTL(log, os.Getenv("REFRESH_TTL"), "720h")
 
 	db, err := repository.NewPostgresDB(repository.Config{
 		Host:     os.Getenv("DB_Host"),
@@ -26,7 +31,7 @@ func main() {
 	}
 
 	repos := repository.NewRepository(log, db)
-	services := service.NewService(log, repos)
+	services := service.NewService(log, servCfg, repos)
 	handlers := handler.NewHandler(log, services)
 
 	srv := new(todoapp.Server)
@@ -47,7 +52,6 @@ func setupLogger() *logrus.Logger {
 	setLogType(log)
 	return log
 }
-
 func setLogType(log *logrus.Logger) {
 	switch os.Getenv("TYPE_OF_LOG") {
 	case "TEXTLOG":
@@ -57,4 +61,13 @@ func setLogType(log *logrus.Logger) {
 	default:
 		log.SetFormatter(&logrus.JSONFormatter{})
 	}
+}
+func setTokenTTL(log *logrus.Logger, t, def string) time.Duration {
+	TokenTTL, err := time.ParseDuration(t)
+	if err != nil {
+		TokenTTL, _ = time.ParseDuration(def)
+		log.Errorf("Failed to set access/refresh token expiration duration. Using default value - %v", TokenTTL)
+		return TokenTTL
+	}
+	return TokenTTL
 }

@@ -13,14 +13,16 @@ import (
 )
 
 type AuthService struct {
-	log  *logrus.Logger
-	repo repository.Authorization
+	log    *logrus.Logger
+	config *todoapp.TokenConfig
+	repo   repository.Authorization
 }
 
-func NewAuthService(log *logrus.Logger, repo repository.Authorization) *AuthService {
+func NewAuthService(log *logrus.Logger, config *todoapp.TokenConfig, repo repository.Authorization) *AuthService {
 	return &AuthService{
-		log:  log,
-		repo: repo,
+		log:    log,
+		config: config,
+		repo:   repo,
 	}
 }
 
@@ -63,14 +65,12 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	accessTokenTtl := setTokensTTL(s.log, os.Getenv("ACCESS_TTL"), "30m")
-	refreshTokenTtl := setTokensTTL(s.log, os.Getenv("REFRESH_TTL"), "720h")
 
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 	accessClaims := accessToken.Claims.(jwt.MapClaims)
 	accessClaims["sub"] = user.Id
 	accessClaims["iat"] = time.Now().Unix()
-	accessClaims["exp"] = time.Now().Add(accessTokenTtl).Unix()
+	accessClaims["exp"] = time.Now().Add(s.config.AccessTokenTtl).Unix()
 
 	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
@@ -83,7 +83,7 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	refreshClaims["sub"] = user.Id
 	refreshClaims["mail"] = email
 	refreshClaims["iat"] = time.Now().Unix()
-	refreshClaims["exp"] = time.Now().Add(refreshTokenTtl).Unix()
+	refreshClaims["exp"] = time.Now().Add(s.config.RefreshTokenTtl).Unix()
 
 	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SIGNING_KEY")))
 	if err != nil {
@@ -98,15 +98,6 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	}
 
 	return accessTokenString, refreshTokenString, nil
-}
-func setTokensTTL(log *logrus.Logger, t, def string) time.Duration {
-	TokenTTL, err := time.ParseDuration(t)
-	if err != nil {
-		TokenTTL, _ = time.ParseDuration(def)
-		log.Errorf("Failed to set access/refresh token expiration duration. Using default value - %v", TokenTTL)
-		return TokenTTL
-	}
-	return TokenTTL
 }
 func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
