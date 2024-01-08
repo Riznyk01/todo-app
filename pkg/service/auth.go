@@ -7,7 +7,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"os"
-	"strconv"
 	"time"
 	todoapp "todo-app"
 	"todo-app/pkg/repository"
@@ -64,20 +63,8 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-
-	accessMinutesStr, err := strconv.Atoi(os.Getenv("ACCESS_TTL"))
-	if err != nil {
-		s.log.Errorf("%s failed to set access token expiration duration\n %s. Using default value - 30 mins.", fc, err)
-		accessMinutesStr = 30
-	}
-	accessTokenTtl := time.Duration(accessMinutesStr) * time.Minute
-
-	refreshHoursStr, err := strconv.Atoi(os.Getenv("REFRESH_TTL"))
-	if err != nil {
-		s.log.Errorf("%s failed to set refresh token expiration duration\n %s. Using default value - 720 hours.", fc, err)
-		refreshHoursStr = 720
-	}
-	refreshTokenTtl := time.Duration(refreshHoursStr) * time.Hour
+	accessTokenTtl := setTokensTTL(s.log, os.Getenv("ACCESS_TTL"), "30m")
+	refreshTokenTtl := setTokensTTL(s.log, os.Getenv("REFRESH_TTL"), "720h")
 
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 	accessClaims := accessToken.Claims.(jwt.MapClaims)
@@ -111,6 +98,15 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	}
 
 	return accessTokenString, refreshTokenString, nil
+}
+func setTokensTTL(log *logrus.Logger, t, def string) time.Duration {
+	TokenTTL, err := time.ParseDuration(t)
+	if err != nil {
+		TokenTTL, _ = time.ParseDuration(def)
+		log.Errorf("Failed to set access/refresh token expiration duration. Using default value - %v", TokenTTL)
+		return TokenTTL
+	}
+	return TokenTTL
 }
 func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
