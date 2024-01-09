@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 )
@@ -28,4 +30,17 @@ func (h *Handler) userIdentity(c *gin.Context) {
 		return
 	}
 	c.Set(userCtx, userId)
+}
+func getUserId(c *gin.Context, log *logrus.Logger) (int, error) {
+	id, ok := c.Get(userCtx)
+	if !ok {
+		newResponceError(c, log, http.StatusInternalServerError, "User id not found")
+		return 0, errors.New("User id not found")
+	}
+	idInt, ok := id.(int)
+	if !ok {
+		newResponceError(c, log, http.StatusInternalServerError, "User id not found")
+		return 0, errors.New("User id not found")
+	}
+	return idInt, nil
 }

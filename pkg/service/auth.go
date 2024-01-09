@@ -58,7 +58,6 @@ func (s *AuthService) CheckUserPassword(email, password string) error {
 
 	return nil
 }
-
 func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	fc := "GenerateTokenPair"
 
@@ -106,7 +105,6 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 	}
 	return accToken, refToken, nil
 }
-
 func (s *AuthService) ParseToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
