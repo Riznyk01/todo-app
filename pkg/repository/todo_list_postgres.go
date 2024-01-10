@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
@@ -64,4 +66,25 @@ func (r *TodoListPostgres) GetById(userId, listId int) (todo_app.TodoList, error
 		return todo_app.TodoList{}, err
 	}
 	return list, nil
+}
+func (r *TodoListPostgres) Delete(userId, listId int) error {
+	fc := "Repository. todo_list_postgres. Delete"
+
+	checkListQuery := fmt.Sprintf("SELECT 1 FROM %s ul WHERE ul.user_id=$1 AND ul.list_id=$2", usersListsTable)
+	var exists int
+	if err := r.db.QueryRow(checkListQuery, userId, listId).Scan(&exists); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			r.log.Infof("%s: List with ID %d does not exist for user with ID %d", fc, listId, userId)
+			return sql.ErrNoRows
+		}
+		r.log.Errorf("%s: %v", fc, err)
+		return err
+	}
+	delUserListQuery := fmt.Sprintf("DELETE FROM %s tl USING %s ul WHERE tl.id=ul.list_id AND ul.user_id=$1 AND ul.list_id=$2",
+		todoListsTable, usersListsTable)
+	if _, err := r.db.Exec(delUserListQuery, userId, listId); err != nil {
+		r.log.Errorf("%s: %v", fc, err)
+		return err
+	}
+	return nil
 }

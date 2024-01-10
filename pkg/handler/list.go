@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"database/sql"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -69,5 +71,24 @@ func (h *Handler) updateList(c *gin.Context) {
 }
 
 func (h *Handler) deleteList(c *gin.Context) {
-
+	userId, err := getUserId(c, h.log)
+	if err != nil {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newResponceError(c, h.log, http.StatusBadRequest, "Invalid id")
+		return
+	}
+	err = h.services.TodoList.Delete(userId, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			newResponceError(c, h.log, http.StatusNotFound, "The list to delete wasn't found for some user")
+			return
+		} else {
+			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	c.JSON(http.StatusOK, statusResponse{Status: "ok"})
 }
