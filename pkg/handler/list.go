@@ -67,7 +67,36 @@ func (h *Handler) getListById(c *gin.Context) {
 }
 
 func (h *Handler) updateList(c *gin.Context) {
-
+	userId, err := getUserId(c, h.log)
+	if err != nil {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newResponceError(c, h.log, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var input todo_app.TodoList
+	if err := c.BindJSON(&input); err != nil {
+		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
+		return
+	}
+	err = h.services.TodoList.ListExists(userId, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			newResponceError(c, h.log, http.StatusNotFound, "List not found")
+			return
+		} else {
+			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	err = h.services.TodoList.Update(userId, id, input)
+	if err != nil {
+		newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, statusResponse{Status: "ok"})
 }
 
 func (h *Handler) deleteList(c *gin.Context) {
@@ -80,15 +109,20 @@ func (h *Handler) deleteList(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusBadRequest, "Invalid id")
 		return
 	}
-	err = h.services.TodoList.Delete(userId, id)
+	err = h.services.TodoList.ListExists(userId, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			newResponceError(c, h.log, http.StatusNotFound, "The list to delete wasn't found for some user")
+			newResponceError(c, h.log, http.StatusNotFound, "List not found")
 			return
 		} else {
 			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
 			return
 		}
+	}
+	err = h.services.TodoList.Delete(userId, id)
+	if err != nil {
+		newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
+		return
 	}
 	c.JSON(http.StatusOK, statusResponse{Status: "ok"})
 }
