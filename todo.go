@@ -13,11 +13,11 @@ type UsersList struct {
 }
 
 type TodoItem struct {
-	Id int `json:"id"`
+	Id int `json:"id" db:"id"`
 	//Title       string `json:"title"`
-	Favorite    string `json:"favorite"`
-	Description string `json:"description"`
-	Done        bool   `json:"done"`
+	Favorite    bool   `json:"favorite" db:"favorite"`
+	Description string `json:"description" db:"description" binding:"required"`
+	Done        bool   `json:"done" db:"done"`
 }
 
 type ListsItem struct {

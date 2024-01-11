@@ -24,6 +24,8 @@ type TodoList interface {
 }
 
 type TodoItem interface {
+	Create(listId int, item todoapp.TodoItem) (int, error)
+	GetAllItems(userId, listId int) ([]todoapp.TodoItem, error)
 }
 
 type Repository struct {
@@ -38,6 +40,9 @@ func NewRepository(log *logrus.Logger, db *sqlx.DB) *Repository {
 			log,
 			db),
 		TodoList: NewTodoListPostgres(
+			log,
+			db),
+		TodoItem: NewTodoItemPostgres(
 			log,
 			db),
 	}

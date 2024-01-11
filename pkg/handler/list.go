@@ -84,7 +84,7 @@ func (h *Handler) updateList(c *gin.Context) {
 	err = h.services.TodoList.ListExists(userId, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			newResponceError(c, h.log, http.StatusNotFound, "List not found")
+			newResponceError(c, h.log, http.StatusBadRequest, "List not found")
 			return
 		} else {
 			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
@@ -112,7 +112,7 @@ func (h *Handler) deleteList(c *gin.Context) {
 	err = h.services.TodoList.ListExists(userId, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			newResponceError(c, h.log, http.StatusNotFound, "List not found")
+			newResponceError(c, h.log, http.StatusBadRequest, "List not found")
 			return
 		} else {
 			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
