@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"database/sql"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -81,16 +79,6 @@ func (h *Handler) updateList(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.services.TodoList.ListExists(userId, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			newResponceError(c, h.log, http.StatusBadRequest, "List not found")
-			return
-		} else {
-			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
 	err = h.services.TodoList.Update(userId, id, input)
 	if err != nil {
 		newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
@@ -108,16 +96,6 @@ func (h *Handler) deleteList(c *gin.Context) {
 	if err != nil {
 		newResponceError(c, h.log, http.StatusBadRequest, "Invalid id")
 		return
-	}
-	err = h.services.TodoList.ListExists(userId, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			newResponceError(c, h.log, http.StatusBadRequest, "List not found")
-			return
-		} else {
-			newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
-			return
-		}
 	}
 	err = h.services.TodoList.Delete(userId, id)
 	if err != nil {

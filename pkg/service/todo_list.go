@@ -27,11 +27,18 @@ func (s *TodoListService) GetById(userId, listId int) (todo_app.TodoList, error)
 	return s.repo.GetById(userId, listId)
 }
 func (s *TodoListService) Delete(userId, listId int) error {
+	_, err := s.repo.GetById(userId, listId)
+	if err != nil {
+		//List doesn't exists or doesn't belongs to user
+		return err
+	}
 	return s.repo.Delete(userId, listId)
 }
 func (s *TodoListService) Update(userId, listId int, list todo_app.TodoList) error {
+	_, err := s.repo.GetById(userId, listId)
+	if err != nil {
+		//List doesn't exists or doesn't belongs to user
+		return err
+	}
 	return s.repo.Update(userId, listId, list)
-}
-func (s *TodoListService) ListExists(userId, listId int) error {
-	return s.repo.ListExists(userId, listId)
 }

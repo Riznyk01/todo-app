@@ -49,16 +49,16 @@ func (h *Handler) getAllItems(c *gin.Context) {
 }
 
 func (h *Handler) getItemById(c *gin.Context) {
-	//userId, err := getUserId(c, h.log)
-	//if err != nil {
-	//	return
-	//}
+	userId, err := getUserId(c, h.log)
+	if err != nil {
+		return
+	}
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		newResponceError(c, h.log, http.StatusBadRequest, "Invalid item id param")
 		return
 	}
-	item, err := h.services.TodoItem.GetItemById(itemId)
+	item, err := h.services.TodoItem.GetItemById(userId, itemId)
 	if err != nil {
 		newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
 		return
@@ -71,5 +71,19 @@ func (h *Handler) updateItem(c *gin.Context) {
 }
 
 func (h *Handler) deleteItem(c *gin.Context) {
-
+	userId, err := getUserId(c, h.log)
+	if err != nil {
+		return
+	}
+	itemId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newResponceError(c, h.log, http.StatusBadRequest, "Invalid id")
+		return
+	}
+	err = h.services.TodoItem.Delete(userId, itemId)
+	if err != nil {
+		newResponceError(c, h.log, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, statusResponse{Status: "ok"})
 }

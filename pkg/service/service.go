@@ -21,13 +21,13 @@ type TodoList interface {
 	GetById(userId, listId int) (todoapp.TodoList, error)
 	Delete(userId, listId int) error
 	Update(userId, listId int, list todoapp.TodoList) error
-	ListExists(userId, listId int) error
 }
 
 type TodoItem interface {
 	Create(userId, listId int, item todoapp.TodoItem) (int, error)
 	GetAllItems(userId, listId int) ([]todoapp.TodoItem, error)
-	GetItemById(itemId int) (todoapp.TodoItem, error)
+	GetItemById(userId, itemId int) (todoapp.TodoItem, error)
+	Delete(userId, itemId int) error
 }
 
 type Service struct {

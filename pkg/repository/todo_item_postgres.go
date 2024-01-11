@@ -55,13 +55,25 @@ func (r *TodoItemPostgres) GetAllItems(userId, listId int) ([]todo_app.TodoItem,
 	}
 	return items, nil
 }
-func (r *TodoItemPostgres) GetItemById(itemId int) (todo_app.TodoItem, error) {
+func (r *TodoItemPostgres) GetItemById(userId, itemId int) (todo_app.TodoItem, error) {
 	fc := "Repository. todo_item_postgres. GetItemById"
 	var item todo_app.TodoItem
-	getItemQuery := fmt.Sprintf("SELECT * FROM %s WHERE id=$1", todoItemsTable)
-	if err := r.db.Get(&item, getItemQuery, itemId); err != nil {
+	getItemQuery := fmt.Sprintf("SELECT ti.id,ti.favorite,ti.description, ti.done FROM %s ti INNER JOIN %s li ON li.item_id = ti.id INNER JOIN %s ul ON ul.list_id=li.list_id WHERE ti.id=$1 AND ul.user_id=$2",
+		todoItemsTable, listsItemsTable, usersListsTable)
+	if err := r.db.Get(&item, getItemQuery, itemId, userId); err != nil {
 		r.log.Errorf("%s: %v", fc, err)
 		return todo_app.TodoItem{}, err
 	}
 	return item, nil
+}
+func (r *TodoItemPostgres) Delete(userId, itemId int) error {
+	fc := "Repository. todo_item_postgres. Delete"
+
+	delUsersItemQuery := fmt.Sprintf("DELETE FROM %s ti USING %s ul, %s li WHERE ti.id=li.item_id AND li.list_id=ul.list_id AND ul.user_id=$1 AND ti.id=$2",
+		todoItemsTable, usersListsTable, listsItemsTable)
+	if _, err := r.db.Exec(delUsersItemQuery, userId, itemId); err != nil {
+		r.log.Errorf("%s: %v", fc, err)
+		return err
+	}
+	return nil
 }

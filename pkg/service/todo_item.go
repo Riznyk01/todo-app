@@ -30,6 +30,14 @@ func (s *TodoItemService) Create(userId, listId int, item todo_app.TodoItem) (in
 func (s *TodoItemService) GetAllItems(userId, listId int) ([]todo_app.TodoItem, error) {
 	return s.repo.GetAllItems(userId, listId)
 }
-func (s *TodoItemService) GetItemById(itemId int) (todo_app.TodoItem, error) {
-	return s.repo.GetItemById(itemId)
+func (s *TodoItemService) GetItemById(userId, itemId int) (todo_app.TodoItem, error) {
+	return s.repo.GetItemById(userId, itemId)
+}
+func (s *TodoItemService) Delete(userId, itemId int) error {
+	_, err := s.repo.GetItemById(userId, itemId)
+	if err != nil {
+		//Item doesn't exists or doesn't belongs to user
+		return err
+	}
+	return s.repo.Delete(userId, itemId)
 }
