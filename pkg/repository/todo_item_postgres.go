@@ -45,7 +45,7 @@ func (r *TodoItemPostgres) Create(listId int, item todo_app.TodoItem) (int, erro
 }
 
 func (r *TodoItemPostgres) GetAllItems(userId, listId int) ([]todo_app.TodoItem, error) {
-	fc := "Repository. todo_list_postgres. GetAllItems"
+	fc := "Repository. todo_item_postgres. GetAllItems"
 	var items []todo_app.TodoItem
 	getListsItemQuery := fmt.Sprintf("SELECT ti.id,ti.favorite,ti.description, ti.done FROM %s ti INNER JOIN %s li ON li.item_id = ti.id INNER JOIN %s ul ON ul.list_id=li.list_id WHERE ul.user_id=$1 AND li.list_id=$2",
 		todoItemsTable, listsItemsTable, usersListsTable)
@@ -54,4 +54,14 @@ func (r *TodoItemPostgres) GetAllItems(userId, listId int) ([]todo_app.TodoItem,
 		return []todo_app.TodoItem{}, err
 	}
 	return items, nil
+}
+func (r *TodoItemPostgres) GetItemById(itemId int) (todo_app.TodoItem, error) {
+	fc := "Repository. todo_item_postgres. GetItemById"
+	var item todo_app.TodoItem
+	getItemQuery := fmt.Sprintf("SELECT * FROM %s WHERE id=$1", todoItemsTable)
+	if err := r.db.Get(&item, getItemQuery, itemId); err != nil {
+		r.log.Errorf("%s: %v", fc, err)
+		return todo_app.TodoItem{}, err
+	}
+	return item, nil
 }
