@@ -41,3 +41,11 @@ func (s *TodoItemService) Delete(userId, itemId int) error {
 	}
 	return s.repo.Delete(userId, itemId)
 }
+func (s *TodoItemService) Update(userId, itemId int, item todo_app.UpdateTodoItem) error {
+	_, err := s.repo.GetItemById(userId, itemId)
+	if err != nil {
+		//Item doesn't exists or doesn't belongs to user
+		return err
+	}
+	return s.repo.Update(userId, itemId, item)
+}

@@ -30,7 +30,20 @@ type UpdateTodoList struct {
 
 func (i UpdateTodoList) Validate() error {
 	if i.Title == nil {
-		return errors.New("the title is empty, please provide a valid title")
+		return errors.New("update structure has no values")
+	}
+	return nil
+}
+
+type UpdateTodoItem struct {
+	Favorite    *bool   `json:"favorite"`
+	Description *string `json:"description"`
+	Done        *bool   `json:"done"`
+}
+
+func (i UpdateTodoItem) Validate() error {
+	if i.Favorite == nil && i.Description == nil && i.Done == nil {
+		return errors.New("update structure has no values")
 	}
 	return nil
 }

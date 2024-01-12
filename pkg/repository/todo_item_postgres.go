@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
+	"strings"
 	todo_app "todo-app"
 )
 
@@ -72,6 +73,40 @@ func (r *TodoItemPostgres) Delete(userId, itemId int) error {
 	delUsersItemQuery := fmt.Sprintf("DELETE FROM %s ti USING %s ul, %s li WHERE ti.id=li.item_id AND li.list_id=ul.list_id AND ul.user_id=$1 AND ti.id=$2",
 		todoItemsTable, usersListsTable, listsItemsTable)
 	if _, err := r.db.Exec(delUsersItemQuery, userId, itemId); err != nil {
+		r.log.Errorf("%s: %v", fc, err)
+		return err
+	}
+	return nil
+}
+func (r *TodoItemPostgres) Update(userId, itemId int, item todo_app.UpdateTodoItem) error {
+	fc := "Repository. todo_item_postgres. Update"
+
+	setValues := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
+
+	if item.Favorite != nil {
+		setValues = append(setValues, fmt.Sprintf("favorite=$%d", argId))
+		args = append(args, *item.Favorite)
+		argId++
+	}
+	if item.Description != nil {
+		setValues = append(setValues, fmt.Sprintf("description=$%d", argId))
+		args = append(args, *item.Description)
+		argId++
+	}
+	if item.Done != nil {
+		setValues = append(setValues, fmt.Sprintf("done=$%d", argId))
+		args = append(args, *item.Done)
+		argId++
+	}
+
+	setStr := strings.Join(setValues, ", ")
+
+	updateUserItemQuery := fmt.Sprintf("UPDATE %s ti SET %s FROM %s li, %s ul WHERE ti.id=li.item_id AND ul.list_id=li.list_id AND ul.user_id=$%d AND ti.id=$%d",
+		todoItemsTable, setStr, listsItemsTable, usersListsTable, argId, argId+1)
+	args = append(args, userId, itemId)
+	if _, err := r.db.Exec(updateUserItemQuery, args...); err != nil {
 		r.log.Errorf("%s: %v", fc, err)
 		return err
 	}
