@@ -34,7 +34,7 @@ func (s *TodoListService) Delete(userId, listId int) error {
 	}
 	return s.repo.Delete(userId, listId)
 }
-func (s *TodoListService) Update(userId, listId int, list todo_app.TodoList) error {
+func (s *TodoListService) Update(userId, listId int, list todo_app.UpdateTodoList) error {
 	_, err := s.repo.GetById(userId, listId)
 	if err != nil {
 		//List doesn't exists or doesn't belongs to user

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
+	"strings"
 	todo_app "todo-app"
 )
 
@@ -76,12 +77,23 @@ func (r *TodoListPostgres) Delete(userId, listId int) error {
 	}
 	return nil
 }
-func (r *TodoListPostgres) Update(userId, listId int, list todo_app.TodoList) error {
+func (r *TodoListPostgres) Update(userId, listId int, list todo_app.UpdateTodoList) error {
 	fc := "Repository. todo_list_postgres. Update"
+	setValues := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
 
-	updateUserListQuery := fmt.Sprintf("UPDATE %s tl SET title=$1 FROM %s ul WHERE tl.id=ul.list_id AND ul.user_id=$2 AND ul.list_id=$3",
-		todoListsTable, usersListsTable)
-	if _, err := r.db.Exec(updateUserListQuery, list.Title, userId, listId); err != nil {
+	if list.Title != nil {
+		setValues = append(setValues, fmt.Sprintf("title=$%d", argId))
+		args = append(args, *list.Title)
+		argId++
+	}
+	setStr := strings.Join(setValues, ", ")
+
+	updateUserListQuery := fmt.Sprintf("UPDATE %s tl SET %s FROM %s ul WHERE tl.id=ul.list_id AND ul.user_id=$%d AND ul.list_id=$%d",
+		todoListsTable, setStr, usersListsTable, argId, argId+1)
+	args = append(args, userId, listId)
+	if _, err := r.db.Exec(updateUserListQuery, args...); err != nil {
 		r.log.Errorf("%s: %v", fc, err)
 		return err
 	}

@@ -74,8 +74,13 @@ func (h *Handler) updateList(c *gin.Context) {
 		newResponceError(c, h.log, http.StatusBadRequest, "invalid id")
 		return
 	}
-	var input todo_app.TodoList
+	var input todo_app.UpdateTodoList
 	if err := c.BindJSON(&input); err != nil {
+		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
+		return
+	}
+	err = input.Validate()
+	if err != nil {
 		newResponceError(c, h.log, http.StatusBadRequest, err.Error())
 		return
 	}
