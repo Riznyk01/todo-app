@@ -25,16 +25,16 @@ func (h *Handler) signUp(c *gin.Context) {
 	var input todoapp.User
 	err := c.BindJSON(&input)
 	if err != nil {
-		newResponceError(c, http.StatusBadRequest, err.Error())
+		newResponseError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if _, err := mail.ParseAddress(input.Email); err != nil {
-		newResponceError(c, http.StatusBadRequest, "Invalid email address.")
+		newResponseError(c, http.StatusBadRequest, "Invalid email address.")
 		return
 	}
 	id, err := h.services.Authorization.CreateUser(input)
 	if err != nil {
-		newResponceError(c, http.StatusInternalServerError, err.Error())
+		newResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -44,6 +44,11 @@ func (h *Handler) signUp(c *gin.Context) {
 type signInInput struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type tokenResponse struct {
+	AccessToken  string `json:"accesstoken"`
+	RefreshToken string `json:"refreshtoken"`
 }
 
 //"required,email,max=64"`
@@ -66,62 +71,70 @@ func (h *Handler) signIn(c *gin.Context) {
 	var input signInInput
 	err := c.BindJSON(&input)
 	if err != nil {
-		newResponceError(c, http.StatusBadRequest, err.Error())
+		newResponseError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if _, err := mail.ParseAddress(input.Email); err != nil {
+		newResponseError(c, http.StatusBadRequest, "Invalid email address.")
 		return
 	}
 	exist, err := h.services.Authorization.ExistsUser(input.Email)
 	if err != nil {
-		newResponceError(c, http.StatusUnauthorized, err.Error())
+		newResponseError(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 	if !exist {
-		newResponceError(c, http.StatusUnauthorized, "Invalid credentials. The specified email doesn't exist.")
+		newResponseError(c, http.StatusUnauthorized, "Account not found.")
 		return
 	}
 	if err := h.services.Authorization.CheckUserPassword(input.Email, input.Password); err != nil {
-		newResponceError(c, http.StatusUnauthorized, "Invalid credentials.")
+		newResponseError(c, http.StatusUnauthorized, "Incorrect password. Please try again.")
 		return
 	}
 	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(input.Email)
 	if err != nil {
-		newResponceError(c, http.StatusInternalServerError, "Error creating signed tokens.")
+		newResponseError(c, http.StatusInternalServerError, "Error creating signed tokens.")
 		return
 	}
-
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"accesstoken":  accessToken,
-		"refreshtoken": refreshToken,
-	})
+	c.JSON(http.StatusOK, tokenResponse{accessToken, refreshToken})
 }
 
+// @Summary Refresh access and refresh tokens
+// @Tags Authentication
+// @Description Refreshes the access and refresh tokens based on the provided refresh token
+// @ID refresh tokens
+// @Procedure json
+// @Param Authorization header string true "Bearer {refresh_token}"
+// @Success 200 {object} tokenResponse
+// @Failure 401,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /auth/refresh-tokens [post]
 func (h *Handler) refreshTokens(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
-		newResponceError(c, http.StatusUnauthorized, "empty auth header")
+		newResponseError(c, http.StatusUnauthorized, "empty auth header")
 		return
 	}
 	headerParts := strings.Split(header, " ")
 	if len(headerParts) != 2 {
-		newResponceError(c, http.StatusUnauthorized, "invalid header")
+		newResponseError(c, http.StatusUnauthorized, "invalid header")
 		return
 	}
 	userMail, err := h.services.Authorization.CheckTokenInDB(headerParts[1])
 	if err != nil {
-		newResponceError(c, http.StatusUnauthorized, "The provided refresh token doesn't exist. Please sign in again to obtain a new token pair.")
+		newResponseError(c, http.StatusUnauthorized, "The provided refresh token doesn't exist. Please sign in again to obtain a new token pair.")
 		return
 	}
 	_, err = h.services.Authorization.ParseToken(headerParts[1])
 	if err != nil {
-		newResponceError(c, http.StatusUnauthorized, err.Error())
+		newResponseError(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 	accessToken, refreshToken, err := h.services.Authorization.GenerateTokenPair(userMail)
 	if err != nil {
-		newResponceError(c, http.StatusInternalServerError, "Error creating signed tokens.")
+		newResponseError(c, http.StatusInternalServerError, "Error creating signed tokens.")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"accesstoken":  accessToken,
-		"refreshtoken": refreshToken,
-	})
+	c.JSON(http.StatusOK, tokenResponse{accessToken, refreshToken})
 }
