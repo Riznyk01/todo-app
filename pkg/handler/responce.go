@@ -2,7 +2,6 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 type errorResponse struct {
@@ -13,7 +12,6 @@ type statusResponse struct {
 	Status string `json:"status"`
 }
 
-func newResponceError(c *gin.Context, log *logrus.Logger, statusCode int, message string) {
-	log.Error(message)
+func newResponceError(c *gin.Context, statusCode int, message string) {
 	c.AbortWithStatusJSON(statusCode, errorResponse{message})
 }

@@ -11,6 +11,17 @@ import (
 	"todo-app/pkg/service"
 )
 
+// @title Todo app API
+// @version 1.0
+// @description API Server for Todolist application
+
+// @host localhost:8080
+// @BasePath/
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	log := setupLogger()
 
