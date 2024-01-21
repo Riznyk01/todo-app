@@ -9,8 +9,8 @@ import (
 )
 
 // @Summary SignUp
-// @Tags Authentication
 // @Description create account
+// @Tags Authentication
 // @ID create-account
 // @Accept json
 // @Procedure json
@@ -56,8 +56,8 @@ type tokenResponse struct {
 
 // TODO: Implement authentication for both username and email
 // @Summary SignIn
-// @Tags Authentication
 // @Description login
+// @Tags Authentication
 // @ID login
 // @Accept json
 // @Procedure json
@@ -100,8 +100,8 @@ func (h *Handler) signIn(c *gin.Context) {
 }
 
 // @Summary Refresh access and refresh tokens
-// @Tags Authentication
 // @Description Refreshes the access and refresh tokens based on the provided refresh token
+// @Tags Authentication
 // @ID refresh tokens
 // @Procedure json
 // @Param Authorization header string true "Bearer {refresh_token}"
