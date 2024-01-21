@@ -7,7 +7,7 @@ import (
 	todo_app "todo-app"
 )
 
-// @Summary Create a new todo list for the user
+// @Summary Create a new todo list for the user.
 // @Description Create a new todo list for the authenticated user.
 // @Security ApiKeyAuth
 // @Tags Lists
@@ -42,7 +42,7 @@ type AllListsResponse struct {
 	Data []todo_app.TodoList `json:"data"`
 }
 
-// @Summary Get all todo lists for the user
+// @Summary Get all todo lists for the user.
 // @Description Retrieve all todo lists belonging to the authenticated user.
 // @Security ApiKeyAuth
 // @Tags Lists
@@ -67,7 +67,7 @@ func (h *Handler) getAllLists(c *gin.Context) {
 	})
 }
 
-// @Summary Get users todo list by id
+// @Summary Get users todo list by id.
 // @Description Retrieve todo list belonging to the authenticated user by todo list id.
 // @Security ApiKeyAuth
 // @Tags Lists
@@ -97,15 +97,15 @@ func (h *Handler) getListById(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
-// @Summary Update users todo list by id
+// @Summary Update users todo list by id.
 // @Description Updates todo list belonging to the authenticated user by todo list id.
 // @Security ApiKeyAuth
 // @Tags Lists
 // @ID update list by id
 // @Accept json
 // @Produce json
-// @Param input body todo_app.UpdateTodoList true "UpdateTodoList object with list title to update"
 // @Param id path int true "ID of the todo list to update"
+// @Param input body todo_app.UpdateTodoList true "UpdateTodoList object with list title to update"
 // @Success 200 {object} statusResponse
 // @Failure 400,401 {object} errorResponse
 // @Failure 404 {object} errorResponse
@@ -139,7 +139,7 @@ func (h *Handler) updateList(c *gin.Context) {
 	c.JSON(http.StatusOK, statusResponse{Status: "Successfully updated the todo list."})
 }
 
-// @Summary Delete users todo list by id
+// @Summary Delete users todo list by id.
 // @Description Deletes todo list belonging to the authenticated user by todo list id.
 // @Security ApiKeyAuth
 // @Tags Lists
