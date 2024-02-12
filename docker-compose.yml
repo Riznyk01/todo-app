@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  todo-app:
+    build: ./
+    command: /wait-for-postgres.sh db /app
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/postgres-passwd
+      SIGNING_KEY_FILE: /run/secrets/signing_key
+    secrets:
+        - postgres-passwd
+        - signing_key
+
+  db:
+    restart: always
+    image: postgres:16.1-alpine
+    volumes:
+    - ./.database/postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres-passwd
+    ports:
+      - 5432:5432
+    secrets:
+      - postgres-passwd
+secrets:
+  postgres-passwd:
+    file: secrets/postgres-passwd.txt
+  signing_key:
+    file: secrets/signing_key.txt
