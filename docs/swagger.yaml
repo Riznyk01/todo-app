@@ -1,0 +1,584 @@
+definitions:
+  handler.AllListsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/todo_app.TodoList'
+        type: array
+    type: object
+  handler.errorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  handler.signInInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.statusResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  handler.tokenResponse:
+    properties:
+      accesstoken:
+        type: string
+      refreshtoken:
+        type: string
+    type: object
+  todo_app.TodoItem:
+    properties:
+      description:
+        type: string
+      done:
+        type: boolean
+      favorite:
+        type: boolean
+      id:
+        type: integer
+    required:
+    - description
+    type: object
+  todo_app.TodoList:
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  todo_app.UpdateTodoItem:
+    properties:
+      description:
+        type: string
+      done:
+        type: boolean
+      favorite:
+        type: boolean
+    type: object
+  todo_app.UpdateTodoList:
+    properties:
+      title:
+        type: string
+    type: object
+  todo_app.User:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API Server for Todolist application
+  title: Todo app API
+  version: "1.0"
+paths:
+  /api/items/{id}:
+    delete:
+      description: Delete а todo item belonging to the authenticated user by todo
+        item id.
+      operationId: delete item by id
+      parameters:
+      - description: ID of the todo item to delete
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete users todo item by id.
+      tags:
+      - Items
+    get:
+      description: Retrieve a todo item belonging to the authenticated user by item
+        id.
+      operationId: get todo item
+      parameters:
+      - description: ID of the todo item retrieve
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/todo_app.TodoItem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get todo item for the user by item id.
+      tags:
+      - Items
+    put:
+      description: Update a todo item belonging to the authenticated user by item
+        id.
+      operationId: update todo item
+      parameters:
+      - description: ID of the todo item to update
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: UpdateTodoItem object with item favorite, description, done
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/todo_app.UpdateTodoItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update todo item for the user by item id.
+      tags:
+      - Items
+  /api/lists:
+    get:
+      description: Retrieve all todo lists belonging to the authenticated user.
+      operationId: get all lists
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AllListsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all todo lists for the user.
+      tags:
+      - Lists
+    post:
+      consumes:
+      - application/json
+      description: Create a new todo list for the authenticated user.
+      operationId: create-list
+      parameters:
+      - description: Information about the todo list (e.g., title, description, etc.)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/todo_app.TodoList'
+      responses:
+        "200":
+          description: Successfully created a new todo list. Returns the ID of the
+            created list.
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new todo list for the user.
+      tags:
+      - Lists
+  /api/lists/{id}:
+    delete:
+      description: Deletes todo list belonging to the authenticated user by todo list
+        id.
+      operationId: delete list by id
+      parameters:
+      - description: ID of the todo list to delete
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete users todo list by id.
+      tags:
+      - Lists
+    get:
+      description: Retrieve todo list belonging to the authenticated user by todo
+        list id.
+      operationId: get list by id
+      parameters:
+      - description: ID of the todo list to retrieve
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AllListsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get users todo list by id.
+      tags:
+      - Lists
+    put:
+      consumes:
+      - application/json
+      description: Updates todo list belonging to the authenticated user by todo list
+        id.
+      operationId: update list by id
+      parameters:
+      - description: ID of the todo list to update
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: UpdateTodoList object with list title to update
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/todo_app.UpdateTodoList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update users todo list by id.
+      tags:
+      - Lists
+  /api/lists/{id}/items:
+    get:
+      description: Retrieve all todo list items belonging to the authenticated user
+        by list id.
+      operationId: get all items
+      parameters:
+      - description: ID of the todo list for retrieve all the items of the list
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/todo_app.TodoItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all todo list items for the user by list id.
+      tags:
+      - Items
+    post:
+      consumes:
+      - application/json
+      description: Create a new todo item for a todo list belonging to the authenticated
+        user.
+      operationId: create item
+      parameters:
+      - description: ID of the todo list for the item
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Information about the todo item (e.g., favorite, description,
+          done.)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/todo_app.TodoItem'
+      responses:
+        "200":
+          description: Successfully created a new todo item. Returns the ID of the
+            created item.
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new todo item for a todo list belonging to the user.
+      tags:
+      - Items
+  /auth/refresh-tokens:
+    post:
+      description: Refreshes the access and refresh tokens based on the provided refresh
+        token
+      operationId: refresh tokens
+      parameters:
+      - description: Bearer {refresh_token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.tokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Refresh access and refresh tokens
+      tags:
+      - Authentication
+  /auth/sign-in:
+    post:
+      consumes:
+      - application/json
+      description: login
+      operationId: login
+      parameters:
+      - description: credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.signInInput'
+      responses:
+        "200":
+          description: token
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: SignIn
+      tags:
+      - Authentication
+  /auth/sign-up:
+    post:
+      consumes:
+      - application/json
+      description: create account
+      operationId: create-account
+      parameters:
+      - description: account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/todo_app.User'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: SignUp
+      tags:
+      - Authentication
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
