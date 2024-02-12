@@ -4,7 +4,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"os"
-	"time"
 	todoapp "todo-app"
 	"todo-app/pkg/handler"
 	"todo-app/pkg/repository"
@@ -25,18 +24,15 @@ import (
 func main() {
 	log := setupLogger()
 
-	servCfg := todoapp.NewConfig()
-	servCfg.AccessTokenTtl = setTokenTTL(log, os.Getenv("ACCESS_TTL"), "30m")
-	servCfg.RefreshTokenTtl = setTokenTTL(log, os.Getenv("REFRESH_TTL"), "720h")
-
-	db, err := repository.NewPostgresDB(repository.Config{
-		Host:     os.Getenv("DB_Host"),
-		Port:     os.Getenv("DB_Port"),
-		Username: os.Getenv("DB_Username"),
-		Password: os.Getenv("DB_Password"),
-		DBName:   os.Getenv("DB_Name"),
-		SSLMode:  os.Getenv("DB_SSLMode"),
-	})
+	servCfg, err := todoapp.NewConfig(log)
+	if err != nil {
+		log.Fatalf("failed to get App config: %s", err.Error())
+	}
+	postgresCfg, err := todoapp.NewConfigPostgres()
+	if err != nil {
+		log.Fatalf("failed to get DB config: %s", err.Error())
+	}
+	db, err := repository.NewPostgresDB(postgresCfg)
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
@@ -52,7 +48,7 @@ func main() {
 	}
 }
 func setupLogger() *logrus.Logger {
-	//panic, fatal, error, warn, warning, info, debug, trace
+
 	log := logrus.New()
 
 	logLevel, err := logrus.ParseLevel(os.Getenv("LOG_LEVEL"))
@@ -72,13 +68,4 @@ func setLogType(log *logrus.Logger) {
 	default:
 		log.SetFormatter(&logrus.JSONFormatter{})
 	}
-}
-func setTokenTTL(log *logrus.Logger, t, def string) time.Duration {
-	TokenTTL, err := time.ParseDuration(t)
-	if err != nil {
-		TokenTTL, _ = time.ParseDuration(def)
-		log.Errorf("Failed to set access/refresh token expiration duration. Using default value - %v", TokenTTL)
-		return TokenTTL
-	}
-	return TokenTTL
 }

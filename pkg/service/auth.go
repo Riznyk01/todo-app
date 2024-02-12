@@ -6,7 +6,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
-	"os"
 	"time"
 	todoapp "todo-app"
 	"todo-app/pkg/repository"
@@ -14,11 +13,11 @@ import (
 
 type AuthService struct {
 	log    *logrus.Logger
-	config *todoapp.TokenConfig
+	config *todoapp.Config
 	repo   repository.Authorization
 }
 
-func NewAuthService(log *logrus.Logger, config *todoapp.TokenConfig, repo repository.Authorization) *AuthService {
+func NewAuthService(log *logrus.Logger, config *todoapp.Config, repo repository.Authorization) *AuthService {
 	return &AuthService{
 		log:    log,
 		config: config,
@@ -68,7 +67,7 @@ func (s *AuthService) GenerateTokenPair(email string) (string, string, error) {
 
 	generateToken := func(customClaims jwt.MapClaims) (string, error) {
 		t := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
-		tString, err := t.SignedString([]byte(os.Getenv("SIGNING_KEY")))
+		tString, err := t.SignedString([]byte(s.config.SigningKey))
 		if err != nil {
 			return "", err
 		}
@@ -110,7 +109,7 @@ func (s *AuthService) ParseToken(tokenString string) (int, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(os.Getenv("SIGNING_KEY")), nil
+		return []byte(s.config.SigningKey), nil
 	})
 	if err != nil {
 		return 0, err
