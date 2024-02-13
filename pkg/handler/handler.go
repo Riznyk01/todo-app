@@ -21,7 +21,7 @@ func NewHandler(log *logrus.Logger, services *service.Service) *Handler {
 	}
 }
 
-func (h *Handler) InitRouts() *gin.Engine {
+func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

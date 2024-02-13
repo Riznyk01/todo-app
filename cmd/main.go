@@ -47,7 +47,7 @@ func main() {
 	srv := new(todoapp.Server)
 	log.Infof("server starting on %s:%s", os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"))
 	go func() {
-		if err := srv.Run(os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"), handlers.InitRouts()); err != nil {
+		if err := srv.Run(os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"), handlers.InitRoutes()); err != nil {
 			log.Fatalf("error occured on starting the HTTP server: %s", err)
 		}
 	}()
