@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"os"
+	"os/signal"
+	"syscall"
 	todoapp "todo-app"
 	"todo-app/pkg/handler"
 	"todo-app/pkg/repository"
@@ -43,8 +46,26 @@ func main() {
 
 	srv := new(todoapp.Server)
 	log.Infof("server starting on %s:%s", os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"))
-	if err := srv.Run(os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"), handlers.InitRouts()); err != nil {
-		log.Fatalf("error occured while starting the HTTP server: %s", err)
+	go func() {
+		if err := srv.Run(os.Getenv("APP_ADDR"), os.Getenv("APP_PORT"), handlers.InitRouts()); err != nil {
+			log.Fatalf("error occured on starting the HTTP server: %s", err)
+		}
+	}()
+
+	log.Infof("TodoApp started")
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+
+	<-quit
+
+	log.Infof("TodoApp shutting down")
+
+	if err = srv.Shutdown(context.Background()); err != nil {
+		log.Errorf("error occured on server shutting down: %s", err.Error())
+	}
+	if err = db.Close(); err != nil {
+		log.Errorf("error occured on db connection close: %s", err.Error())
 	}
 }
 func setupLogger() *logrus.Logger {
