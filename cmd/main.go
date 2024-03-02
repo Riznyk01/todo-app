@@ -35,7 +35,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get DB config: %s", err.Error())
 	}
-	db, err := repository.NewPostgresDB(postgresCfg)
+	db, err := repository.NewPostgresDB(*postgresCfg)
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}

@@ -1,6 +1,7 @@
 package todo_app
 
 import (
+	"errors"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -23,23 +24,25 @@ type PostgresConfig struct {
 }
 
 func NewConfig(log *logrus.Logger) (cfg *Config, err error) {
-	var SignKey string
-	AccessTtl := setTokenTTL(log, os.Getenv("ACCESS_TTL"), "30m")
-	RefreshTtl := setTokenTTL(log, os.Getenv("REFRESH_TTL"), "720h")
+	cfg = &Config{}
+
+	cfg.AccessTokenTtl = setTokenTTL(log, os.Getenv("ACCESS_TTL"), "30m")
+	cfg.RefreshTokenTtl = setTokenTTL(log, os.Getenv("REFRESH_TTL"), "720h")
 
 	if os.Getenv("SIGNING_KEY_FILE") != "" {
-		SignKey, err = readSecret(os.Getenv("SIGNING_KEY_FILE"))
+		cfg.SigningKey, err = readSecret(os.Getenv("SIGNING_KEY_FILE"))
 		if err != nil {
-			return &Config{}, err
+			return nil, err
 		}
 	} else {
-		SignKey = os.Getenv("SIGNING_KEY")
+		cfg.SigningKey = os.Getenv("SIGNING_KEY")
 	}
-	return &Config{
-		AccessTokenTtl:  AccessTtl,
-		RefreshTokenTtl: RefreshTtl,
-		SigningKey:      SignKey,
-	}, nil
+
+	if cfg.SigningKey == "" {
+		return nil, errors.New("signing key for the JWT is empty")
+	}
+
+	return cfg, nil
 }
 
 func setTokenTTL(log *logrus.Logger, t, def string) time.Duration {
@@ -52,24 +55,29 @@ func setTokenTTL(log *logrus.Logger, t, def string) time.Duration {
 	return TokenTTL
 }
 
-func NewConfigPostgres() (cfg PostgresConfig, err error) {
-	var dbPass string
+func NewConfigPostgres() (postgresCfg *PostgresConfig, err error) {
+	postgresCfg = &PostgresConfig{}
+
 	if os.Getenv("DB_PASSWORD_FILE") != "" {
-		dbPass, err = readSecret(os.Getenv("DB_PASSWORD_FILE"))
+		postgresCfg.Password, err = readSecret(os.Getenv("DB_PASSWORD_FILE"))
 		if err != nil {
-			return PostgresConfig{}, err
+			return nil, err
 		}
 	} else {
-		dbPass = os.Getenv("DB_PASSWORD")
+		postgresCfg.Password = os.Getenv("DB_PASSWORD")
 	}
-	return PostgresConfig{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		Username: os.Getenv("DB_USERNAME"),
-		Password: dbPass,
-		DBName:   os.Getenv("DB_NAME"),
-		SSLMode:  os.Getenv("DB_SSLMODE"),
-	}, nil
+
+	postgresCfg.Host = os.Getenv("DB_HOST")
+	postgresCfg.Port = os.Getenv("DB_PORT")
+	postgresCfg.Username = os.Getenv("DB_USERNAME")
+	postgresCfg.DBName = os.Getenv("DB_NAME")
+	postgresCfg.SSLMode = os.Getenv("DB_SSLMODE")
+
+	if postgresCfg.Host == "" || postgresCfg.Port == "" || postgresCfg.Username == "" || postgresCfg.DBName == "" || postgresCfg.SSLMode == "" || postgresCfg.Password == "" {
+		return nil, errors.New("some fields in the PostgreSQL config are empty")
+	}
+
+	return postgresCfg, nil
 }
 
 func readSecret(path string) (secret string, err error) {
